@@ -2,38 +2,32 @@ package com.example.demo.Models;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-@Entity
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Document(collection = "user_temp")
 public class UserTemp {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     private String fullName;
 
-    @Column(unique = true)
+    @Indexed(unique = false) // unique optional; keep false to allow reuse, change if required
     private String mobile;
 
     private String otp;
-
-    @Builder.Default
-    private boolean otpVerified = false;
-
-    private String investmentRange; // BELOW_50L, 50L_2CR, 2CR_5CR, ABOVE_10CR
-
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime otpGeneratedAt;
+    private boolean otpVerified;
+    private String investmentRange;
+    private LocalDateTime createdAt;
 }

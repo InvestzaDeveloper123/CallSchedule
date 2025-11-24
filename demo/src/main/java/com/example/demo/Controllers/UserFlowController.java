@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -15,95 +16,82 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.Models.UserTemp;
-import com.example.demo.Sevices.UserFlowService;
+import com.example.demo.Services.UserFlowService;
 import com.example.demo.dto.CreateBookingRequest;
 import com.example.demo.dto.InvestmentRequest;
 import com.example.demo.dto.SendOtpRequest;
 import com.example.demo.dto.StartRequest;
 import com.example.demo.dto.VerifyOtpRequest;
 
-import lombok.RequiredArgsConstructor;
-
 @RestController
 @RequestMapping("/api/flow")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class UserFlowController {
 
     private final UserFlowService userFlowService;
 
-    // -------------------------
-    // STEP 1: Save Full Name
-    // -------------------------
-    @PostMapping("/start")
-    public ResponseEntity<UserTemp> start(@RequestBody StartRequest req) {
-        return ResponseEntity.ok(userFlowService.start(req));
+    @Autowired
+    public UserFlowController(UserFlowService userFlowService) {
+        this.userFlowService = userFlowService;
     }
 
-    // -------------------------
-    // STEP 2: Send OTP
-    // -------------------------
+    // STEP 1
+    @PostMapping("/start")
+    public ResponseEntity<?> start(@RequestBody StartRequest req) {
+        UserTemp u = userFlowService.start(req);
+        return ResponseEntity.ok(Map.of("userId", u.getId()));
+    }
+
+    // STEP 2
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@RequestBody SendOtpRequest req) {
         UserTemp u = userFlowService.sendOtp(req);
-
-        // TEST MODE: Return OTP directly
-        return ResponseEntity.ok(
-                Map.of(
-                        "userId", u.getId(),
-                        "mobile", u.getMobile(),
-                        "otp", u.getOtp()
-                )
-        );
+        return ResponseEntity.ok(Map.of(
+                "userId", u.getId(),
+                "mobile", u.getMobile(),
+                "message", "OTP request submitted - check SMS"));
     }
 
-    // -------------------------
-    // STEP 2b: Verify OTP
-    // -------------------------
+    // STEP 2b
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody VerifyOtpRequest req) {
+        // Service handles ALL verification logic (OTP match, expiry, user existence)
         boolean ok = userFlowService.verifyOtp(req);
 
-        if (ok)
+        if (ok) {
+            // Success: OTP matched and was not expired.
             return ResponseEntity.ok(Map.of("verified", true));
+        }
 
-        return ResponseEntity.badRequest().body(Map.of(
-                "verified", false,
-                "message", "Invalid OTP"
+        // Failure: If the service returns false, the OTP was invalid, expired, or the user was not found.
+        return ResponseEntity.ok(Map.of(
+            "verified", false,
+            "expired", false, 
+            "message", "Invalid OTP or OTP expired. Please request a new one."
         ));
     }
 
-    // -------------------------
-    // STEP 3: Investment Range
-    // -------------------------
+    // STEP 3
     @PostMapping("/investment")
     public ResponseEntity<?> investment(@RequestBody InvestmentRequest req) {
         boolean eligible = userFlowService.setInvestment(req);
         return ResponseEntity.ok(Map.of("eligible", eligible));
     }
 
-    // -------------------------
-    // STEP 4: Check Slot Availability
-    // -------------------------
+    // STEP 4
     @GetMapping("/check-slot")
     public ResponseEntity<?> checkSlot(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime time
-    ) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime time) {
         return ResponseEntity.ok(userFlowService.checkSlot(date, time));
     }
 
-    // -------------------------
-    // STEP 5: Create Final Booking
-    // -------------------------
+    // STEP 5
     @PostMapping("/create-booking")
     public ResponseEntity<?> createBooking(@RequestBody CreateBookingRequest req) {
         return ResponseEntity.ok(userFlowService.createBooking(req));
     }
 
-    // -------------------------
-    // LIST ALL BOOKINGS (ADMIN)
-    // -------------------------
     @GetMapping("/bookings")
     public ResponseEntity<?> getAllBookings() {
         return ResponseEntity.ok(userFlowService.getAllBookings());

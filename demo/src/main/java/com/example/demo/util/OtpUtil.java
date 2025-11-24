@@ -1,10 +1,10 @@
 package com.example.demo.util;
-import java.security.SecureRandom;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 public class OtpUtil {
-    private static final SecureRandom random = new SecureRandom();
-
     public static String generate4DigitOtp() {
-        return String.valueOf(random.nextInt(9000) + 1000); // 1000–9999
+        int n = ThreadLocalRandom.current().nextInt(1000, 10000);
+        return String.valueOf(n);
     }
 }
