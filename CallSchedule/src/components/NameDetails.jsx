@@ -22,7 +22,8 @@ const NameDetails = () => {
       try {
         // 1️⃣ Start flow API call
         const res = await startFlow(name);
-        const userId = res.data.id;
+        const userId = res.data.userId;
+
 
         // 2️⃣ Save userId + name in global context
         setUserData((prev) => ({

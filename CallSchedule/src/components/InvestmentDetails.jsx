@@ -8,7 +8,7 @@ import { ChevronRight } from "lucide-react";
 const InvestmentDetails = () => {
   const [selectedRange, setSelectedRange] = useState("");
 
-  const { userData, setUserdata } = useContext(userDetails);
+  const { userData } = useContext(userDetails);
 
   const navigate = useNavigate();
 
@@ -37,13 +37,8 @@ const InvestmentDetails = () => {
     setSelectedRange(id);
   };
 
-  // if (!res.data.eligible) {
-  //   alert("Not eligible for Investza PMS");
-  //   return;
-  // }
-
   const handleContinue = async () => {
-    const res = await selectInvestment(Number(userData.userId), selectedRange);
+    const res = await selectInvestment(userData.userId, selectedRange);
     navigate("/scheduleCall");
   };
 
@@ -113,9 +108,6 @@ const InvestmentDetails = () => {
         >
           Continue
           <ChevronRight size={20} />
-          {/* <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
-          </svg> */}
         </button>
 
         <div className={styles["investment-footer"]}>

@@ -19,7 +19,7 @@ const ContactDetails = () => {
       try {
         console.log(userData.userId);
         // 1️⃣ Call backend API
-        const res = await sendOtp(Number(userData.userId), phoneNumber);
+        const res = await sendOtp(userData.userId, phoneNumber);
 
         // 2️⃣ Save phone number to global context
         setUserData((prev) => ({
@@ -36,6 +36,7 @@ const ContactDetails = () => {
       } catch (error) {
         console.error("Error sending OTP:", error);
         alert("Failed to send OTP. Try again.");
+        
       }
     }
   };

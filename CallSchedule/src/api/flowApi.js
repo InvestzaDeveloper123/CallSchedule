@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API = "http://localhost:8081/api/flow";
+const API = "http://localhost:8080/api/flow";
 
 export const startFlow = (fullName) => axios.post(`${API}/start`, { fullName });
 
@@ -11,7 +11,7 @@ export const sendOtp = (userId, mobile) => {
 };
 
 export const verifyOtp = (userId, otp) =>
-  axios.post(`${API}/verify-otp`, { userId, otp });
+  axios.post(`${API}/verify-otp`, { userId: String(userId), otp });
 
 export const selectInvestment = (userId, investmentRange) =>
   axios.post(`${API}/investment`, { userId, investmentRange });

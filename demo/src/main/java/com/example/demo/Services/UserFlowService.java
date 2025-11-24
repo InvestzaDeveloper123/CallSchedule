@@ -40,7 +40,7 @@ public class UserFlowService {
         this.smsService = smsService;
     }
 
-    // STEP 1
+    // STEP 1 - Start Flow
     public UserTemp start(StartRequest req) {
         UserTemp u = UserTemp.builder()
                 .fullName(req.getFullName())
@@ -51,7 +51,7 @@ public class UserFlowService {
         return userTempRepository.save(u);
     }
 
-    // STEP 2
+    // STEP 2 - Send OTP
     @Transactional
     public UserTemp sendOtp(SendOtpRequest req) {
 
@@ -81,20 +81,19 @@ public class UserFlowService {
         u.setOtpGeneratedAt(LocalDateTime.now());
         userTempRepository.save(u);
 
-        // Call the service with only mobile and otp
         smsService.sendSms(u.getMobile(), otp);
 
         return u;
     }
 
-    // STEP 2b
+    // STEP 2b - Verify OTP
     @Transactional
     public boolean verifyOtp(VerifyOtpRequest req) {
-        // Fix: Prevent IllegalArgumentException if userId is null/empty
+
         if (req.getUserId() == null || req.getUserId().isBlank()) {
             return false;
         }
-        
+
         Optional<UserTemp> optional = userTempRepository.findById(req.getUserId());
         if (optional.isEmpty()) return false;
 
@@ -104,38 +103,50 @@ public class UserFlowService {
 
         if (u.getOtpGeneratedAt() != null &&
                 u.getOtpGeneratedAt().plusMinutes(3).isBefore(LocalDateTime.now())) {
-            return false; // OTP Expired
+            return false; // OTP expired
         }
 
-        // Fix: Use trim() on the incoming OTP to prevent failures due to whitespace
         if (u.getOtp().equals(req.getOtp().trim())) {
             u.setOtpVerified(true);
             userTempRepository.save(u);
-            return true; // OTP Matched
+            return true;
         }
 
-        return false; // OTP Invalid
+        return false;
     }
 
-    // STEP 3
+    // STEP 3 - Investment Range
     @Transactional
     public boolean setInvestment(InvestmentRequest req) {
-        UserTemp u = userTempRepository.findById(req.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        // Prevent crashing 500 on missing userId
+        if (req.getUserId() == null || req.getUserId().isBlank()) {
+            System.out.println("❌ Investment error: Missing userId");
+            return false;
+        }
+
+        // Safe lookup (no exception)
+        UserTemp u = userTempRepository.findById(req.getUserId()).orElse(null);
+        if (u == null) {
+            System.out.println("❌ Investment error: User not found for ID: " + req.getUserId());
+            return false;
+        }
+
+        // Save frontend range (below-50, 50-2cr, 2-5cr, 10cr-plus)
         u.setInvestmentRange(req.getInvestmentRange());
         userTempRepository.save(u);
 
-        return !"BELOW_50L".equalsIgnoreCase(req.getInvestmentRange());
+        // Eligibility rule → only `below-50` is not eligible
+        return !"below-50".equalsIgnoreCase(req.getInvestmentRange());
     }
 
-    // STEP 4
+    // STEP 4 - Check Slot Availability
     public CheckSlotResponse checkSlot(LocalDate date, LocalTime time) {
         long count = bookingRepository.countByDateAndTime(date, time);
         return new CheckSlotResponse(count < 5, count);
     }
 
-    // STEP 5
+    // STEP 5 - Create Booking
     @Transactional
     public Booking createBooking(CreateBookingRequest req) {
 
@@ -146,7 +157,8 @@ public class UserFlowService {
             throw new IllegalStateException("OTP not verified");
         }
 
-        if ("BELOW_50L".equalsIgnoreCase(u.getInvestmentRange())) {
+        // Updated to match frontend investment range
+        if ("below-50".equalsIgnoreCase(u.getInvestmentRange())) {
             throw new IllegalStateException("User not eligible");
         }
 
@@ -170,7 +182,6 @@ public class UserFlowService {
         return bookingRepository.save(b);
     }
 
-    // Fix: Add safety check to prevent IllegalArgumentException when ID is null
     public UserTemp getUser(String id) {
         if (id == null || id.isBlank()) {
             return null;

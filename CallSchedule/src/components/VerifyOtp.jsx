@@ -43,7 +43,8 @@ const VerifyOtp = ({ phoneNumber, onVerify }) => {
 
     if (otp.length === 4) {
       try {
-        const res = await verifyOtp(Number(userData.userId), otp);
+        const res = await verifyOtp(userData.userId, otp);
+
 
         if (res.data.verified) {
           setIsLoading(true);

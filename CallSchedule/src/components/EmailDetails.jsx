@@ -60,7 +60,7 @@ const EmailDetails = ({ onBack }) => {
         // 2️⃣ Call API to create booking
 
         const response = await createBooking({
-          userId: Number(userData.userId),
+          userId: userData.userId,
           email: formData.email, // <-- Always latest
           guestEmail: formData.guestEmail,
           message: formData.message,
